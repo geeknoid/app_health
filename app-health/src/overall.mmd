@@ -1,0 +1,8 @@
+stateDiagram-v2
+    Aggregator --> Telemetry_Tracker: trigger
+    Redis_Publisher --> Aggregator: health state
+    Cosmos_DB_Publisher --> Aggregator: health state
+    Readiness_Probe --> Aggregator: query
+    Kubernetes --> Readiness_Probe: rpc
+    Telemetry_Tracker --> Geneva
+    Telemetry_Tracker --> Aggregator: query

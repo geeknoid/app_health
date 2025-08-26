@@ -1,0 +1,23 @@
+[package]
+name = "app-health"
+description = "Application health tracking infrastructure."
+readme.workspace = true
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+categories.workspace = true
+keywords.workspace = true
+repository.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+simple-mermaid = "0.2.0"
+
+[dev-dependencies]
+mutants = { version = "0.0.3" }
+
+[build-dependencies]
+
+[lints]
+workspace = true
