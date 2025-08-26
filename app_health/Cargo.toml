@@ -1,0 +1,31 @@
+[package]
+name = "app_health"
+description = "Application health tracking infrastructure."
+readme.workspace = true
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+categories.workspace = true
+keywords.workspace = true
+repository.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+bitflags.workspace = true
+simple-mermaid = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["time", "sync", "rt", "macros"] }
+serde = { workspace = true, features = ["derive", "rc" ], optional = true }
+
+[dev-dependencies]
+serde_json = { version = "1.0", optional = false }
+
+[features]
+mermaid = ["dep:simple-mermaid"]
+serde = ["dep:serde"]
+
+[package.metadata.docs.rs]
+features = ["mermaid", "serde"]
+
+[lints]
+workspace = true

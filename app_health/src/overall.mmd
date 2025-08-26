@@ -1,0 +1,48 @@
+stateDiagram-v2
+    Redis_Component --> Aggregator: Redis health
+    Cosmos_DB_Component --> Aggregator: Cosmos DB health
+    Readiness_Probe --> Aggregator: get app health
+    Kubernetes --> Readiness_Probe: rpc
+    Aggregator --> Telemetry_Module: notification
+    Telemetry_Module --> Aggregator: get reports
+    Publisher_0 --> Redis_Component: signal
+    Publisher_1 --> Redis_Component: signal
+    Publisher_2 --> Cosmos_DB_Component: signal
+    Publisher_3 --> Cosmos_DB_Component: signal
+    Redis_Client_Lib --> Publisher_0
+    Redis_Client_Lib --> Publisher_1
+    Cosmos_DB_Client_Lib --> Publisher_2
+    Cosmos_DB_Client_Lib --> Publisher_3
+    Telemetry_Module --> Telemetry_Backend: rpc
+    Redis_Client_Lib --> Redis: rpc
+    Cosmos_DB_Client_Lib --> Cosmos_DB: rpc
+
+    Redis_Component: Redis Component
+    Cosmos_DB_Component: Cosmos DB Component
+    Publisher_0: Publisher
+    Publisher_1: Publisher
+    Publisher_2: Publisher
+    Publisher_3: Publisher
+    Readiness_Probe: Readiness Probe
+    Telemetry_Module: Telemetry Module
+    Redis_Client_Lib: Redis Client Library
+    Cosmos_DB_Client_Lib: Cosmos DB Client Library
+    Telemetry_Backend: Telemetry Backend
+    Cosmos_DB: Cosmos DB
+
+    classDef health_infra fill:#f96,stroke:#333,color:black
+    class Aggregator health_infra
+    class Redis_Component health_infra
+    class Cosmos_DB_Component health_infra
+    class Publisher_0 health_infra
+    class Publisher_1 health_infra
+    class Publisher_2 health_infra
+    class Publisher_3 health_infra
+    class Telemetry_Monitor health_infra
+    class Readiness_Probe_Monitor health_infra
+
+    classDef out_of_proc fill:green,stroke:#333,color:black
+    class Kubernetes out_of_proc
+    class Redis out_of_proc
+    class Cosmos_DB out_of_proc
+    class Telemetry_Backend out_of_proc
