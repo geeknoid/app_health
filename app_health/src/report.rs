@@ -1,4 +1,4 @@
-use crate::{Health, Entries};
+use crate::Entries;
 
 pub struct Report;
 

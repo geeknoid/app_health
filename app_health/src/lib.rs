@@ -34,22 +34,24 @@
 #![doc = mermaid!("overall.mmd")]
 
 mod aggregator;
-mod publisher;
-mod report;
-mod health;
-mod entry;
 mod entries;
-mod tracker;
+mod entry;
 mod filter;
 mod fragments;
+mod health;
+mod publisher;
+mod report;
+mod tracker;
 
-use simple_mermaid::mermaid;
-pub use publisher::Publisher;
 pub use aggregator::Aggregator;
-pub use report::Report;
-pub use entry::Entry;
 pub use entries::Entries;
-pub use health::Health;
-pub use tracker::Tracker;
+pub use entry::Entry;
 pub use filter::Filter;
 pub use fragments::Fragments;
+pub use health::Health;
+pub use publisher::Publisher;
+pub use report::Report;
+use simple_mermaid::mermaid;
+pub use tracker::Tracker;
+
+pub(crate) use publisher::PublisherId;
