@@ -15,7 +15,6 @@ rust-version.workspace = true
 bitflags.workspace = true
 simple-mermaid = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["time", "sync", "rt", "macros"] }
-tokio-debouncer.workspace = true
 serde = { workspace = true, features = ["derive"], optional = true }
 
 [dev-dependencies]

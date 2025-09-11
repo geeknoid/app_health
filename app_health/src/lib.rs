@@ -87,13 +87,13 @@ mod component;
 mod component_monitor;
 mod component_report;
 mod component_state;
+mod debouncer;
 mod filter;
 mod health_state;
 mod messages;
 mod monitor;
 mod publisher;
 mod report;
-mod debouncer;
 
 pub use aggregator::Aggregator;
 pub use component::Component;

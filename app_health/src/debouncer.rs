@@ -1,13 +1,13 @@
 use core::pin::Pin;
-use core::time::Duration;
 use core::task::{Context, Poll};
+use core::time::Duration;
 use tokio::time::{Instant, Sleep, sleep};
 
 pub struct Debouncer {
     debounce_delay: Duration,
     last_fired: Instant,
     timer: Pin<Box<Sleep>>,
-    timer_active: bool
+    timer_active: bool,
 }
 
 impl Debouncer {
@@ -16,10 +16,14 @@ impl Debouncer {
             debounce_delay,
             last_fired: Instant::now(),
             timer: Box::pin(sleep(Duration::from_secs(0))),
-            timer_active: false
+            timer_active: false,
         }
     }
 
+    /// Report that an event we want debounced has occurred.
+    /// 
+    /// Returns `true` if the event should be processed immediately,
+    /// or `false` if it should be deferred until the debounce period.
     pub fn trigger(&mut self) -> bool {
         let now = Instant::now();
         let elapsed = now.duration_since(self.last_fired);
@@ -40,6 +44,7 @@ impl Debouncer {
         }
     }
 
+    /// Returns a future that resolves when the debounce period has elapsed and pending events should be processed.
     pub const fn ready(&mut self) -> DebounceReady<'_> {
         DebounceReady { debouncer: self }
     }

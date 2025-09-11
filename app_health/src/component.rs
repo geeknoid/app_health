@@ -1,6 +1,8 @@
 use crate::aggregator::AggregatorMessage;
 use crate::component_state::ComponentState;
+use crate::debouncer::Debouncer;
 use crate::{ComponentMonitor, ComponentReport, Filter, HealthState, Publisher, PublisherMessage};
+use core::time::Duration;
 use tokio::sync::{mpsc, oneshot, watch};
 
 /// A component responsible for tracking the health of an individual feature in an application.
@@ -76,42 +78,48 @@ async fn component_worker(
 ) {
     let mut component_state = ComponentState::new(name);
     let mut health_state = HealthState::Nominal;
+    let mut debouncer = Debouncer::new(Duration::from_millis(100));
 
     loop {
-        let Some(mut update) = component_rx.recv().await else { return };
-        let mut changes = false;
+        let mut send_update = false;
 
-        loop {
-            match update {
-                ComponentMessage::StartPublishing(health) => {
-                    component_state.add_publisher_health(health);
-                    changes = true;
-                }
+        tokio::select! {
+            msg = component_rx.recv() => {
+                match msg {
+                    Some(ComponentMessage::StartPublishing(health)) => {
+                        component_state.add_publisher_health(health);
+                        send_update = debouncer.trigger();
+                    }
 
-                ComponentMessage::ChangeHealth(old_health, new_health) => {
-                    component_state.remove_publisher_health(old_health);
-                    component_state.add_publisher_health(new_health);
-                    changes = true;
-                }
+                    Some(ComponentMessage::ChangeHealth(old_health, new_health)) => {
+                        component_state.remove_publisher_health(old_health);
+                        component_state.add_publisher_health(new_health);
+                        send_update = debouncer.trigger();
+                    }
 
-                ComponentMessage::StopPublishing(health) => {
-                    component_state.remove_publisher_health(health);
-                    changes = true;
-                }
+                    Some(ComponentMessage::StopPublishing(health)) => {
+                        component_state.remove_publisher_health(health);
+                        send_update = debouncer.trigger();
+                    }
 
-                ComponentMessage::GetReport(filter, response_tx) => {
-                    let report = component_state.make_report(filter);
-                    let _ = response_tx.send(report);
+                    Some(ComponentMessage::GetReport(filter, response_tx)) => {
+                        let report = component_state.make_report(filter);
+                        let _ = response_tx.send(report);
+                    }
+
+                    None => {
+                        // all senders have been dropped, so we exit
+                        return;
+                    }
                 }
             }
 
-            update = match component_rx.try_recv() {
-                Ok(msg) => msg,
-                _ => break,
-            };
+            () = debouncer.ready() => {
+                send_update = true;
+            }
         }
 
-        if changes {
+        if send_update {
             let new_state = component_state.state();
 
             // We don't send updates if the previous state was nominal and the new state is also nominal.

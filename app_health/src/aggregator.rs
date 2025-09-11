@@ -1,14 +1,10 @@
 use crate::component::Component;
+use crate::debouncer::Debouncer;
 use crate::{ComponentMonitor, Filter, HealthState, Monitor, Report};
-use core::pin::Pin;
 use core::time::Duration;
 use tokio::sync::{mpsc, oneshot, watch};
-use tokio::time::{Instant, Sleep, sleep};
 
-/// Aggregates health reports from multiple components.
-///
-/// Individual components each get publishers to report their state to the component, which then reports to the aggregator. You can query the application's health by
-/// creating a monitor, which lets you poll the health or be notified whenever the health changes.
+/// Aggregates health state from multiple components.
 #[derive(Debug)]
 pub struct Aggregator {
     aggregator_tx: mpsc::UnboundedSender<AggregatorMessage>,
@@ -56,11 +52,11 @@ async fn aggregator_worker(
     debounce_delay: Duration,
 ) {
     let mut monitors = Vec::new();
-    let mut last_health_update = Instant::now();
-    let mut debounced_health_update_timer: Pin<Box<Sleep>> = Box::pin(sleep(Duration::from_secs(0)));
-    let mut debounced_health_update_timer_active = false;
+    let mut debouncer = Debouncer::new(debounce_delay);
 
     loop {
+        let mut send_update = false;
+
         tokio::select! {
             msg = aggregator_rx.recv() => {
                 match msg {
@@ -84,19 +80,7 @@ async fn aggregator_worker(
                     }
 
                     Some(AggregatorMessage::ComponentHealthChanged) => {
-                        let now = Instant::now();
-                        let elapsed = now.duration_since(last_health_update);
-                        if elapsed >= debounce_delay {
-                            // Immediate update; cancel any pending timer.
-                            debounced_health_update_timer_active = false;
-                            last_health_update = now;
-                            let _ = health_tx.send(get_aggregate_health_state(&monitors));
-                        } else if !debounced_health_update_timer_active {
-                            // Schedule a deferred update
-                            let delay = debounce_delay - elapsed;
-                            debounced_health_update_timer.as_mut().reset(now + delay);
-                            debounced_health_update_timer_active = true;
-                        }
+                        send_update = debouncer.trigger();
                     }
 
                     Some(AggregatorMessage::ComponentDropped) => {
@@ -111,11 +95,13 @@ async fn aggregator_worker(
                 }
             }
 
-            () = debounced_health_update_timer.as_mut(), if debounced_health_update_timer_active => {
-                debounced_health_update_timer_active = false;
-                last_health_update = Instant::now();
-                let _ = health_tx.send(get_aggregate_health_state(&monitors));
+            () = debouncer.ready() => {
+                send_update = true;
             }
+        }
+
+        if send_update {
+            let _ = health_tx.send(get_aggregate_health_state(&monitors));
         }
     }
 }
